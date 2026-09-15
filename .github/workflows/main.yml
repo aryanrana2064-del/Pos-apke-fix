@@ -23,6 +23,11 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Configure Android SDK PATH
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+
       - name: Install required SDK platform & build-tools
         run: |
           yes | sdkmanager --licenses || true
