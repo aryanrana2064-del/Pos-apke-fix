@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="cache_reports" path="reports/" />
+    <cache-path name="cache_pdfs" path="." />
+    <files-path name="company_logos" path="logos/" />
+    <files-path name="database_backups" path="backups/" />
+</paths>

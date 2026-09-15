@@ -1,0 +1,82 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Release and Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      # compileSdk/targetSdk 36 is very new — the default GitHub-hosted
+      # runner image usually does NOT have it pre-installed. This sets up
+      # the Android cmdline-tools and accepts all SDK licenses so Gradle/AGP
+      # can auto-download whatever platform + build-tools it needs.
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required SDK platform & build-tools
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
+          sdkmanager --install "platforms;android-36-ext1" || true
+          yes | sdkmanager --licenses || true
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # This repo is missing gradlew / gradlew.bat / gradle-wrapper.jar.
+      # Generate them here (matching the version pinned in
+      # gradle/wrapper/gradle-wrapper.properties) instead of relying on
+      # committed wrapper files that don't exist yet.
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 9.3.1
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Split into small steps on purpose: --info was making the combined
+      # log tens of thousands of lines long, so the real error scrolled off
+      # screen and GitHub's UI only showed the tail of unrelated stack
+      # unwinding. Each step below is short, so whichever one fails will
+      # show its actual error message right there — no scrolling needed.
+      - name: Compile Kotlin
+        run: ./gradlew :app:compileDebugKotlin --stacktrace --console=plain
+
+      - name: Process resources (icons, drawables, XML)
+        run: ./gradlew :app:processDebugResources --stacktrace --console=plain
+
+      - name: Assemble Debug APK
+        run: ./gradlew assembleDebug --stacktrace --console=plain
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-error-log
+          path: |
+            **/build/outputs/logs/**
+            **/build/reports/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KhataPro-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14

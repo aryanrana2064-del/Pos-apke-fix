@@ -1,0 +1,6 @@
+{
+  "name": "VX7 Khata",
+  "description": "Smart Khata Book, Customer Order Ledger, and Payment Management App with automated calculations, receipts, reports, and local backup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
